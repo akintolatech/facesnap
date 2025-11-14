@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture</title>
+    <link type="text/css" href="{% static 'styles/style.css' %}" rel="stylesheet" />
+    <link type="x-icon" href="{% static 'img/logo.jpg' %}" rel="icon" />
+    <script lang="javascript" src="{% static 'js/circularProgressBar.js' %}"></script>
+</head>
+<body>
+<main>
+    <div class="scalfold">
+        <div class="topbar">
+            <h2>{{ student.name }}</h2>
+        </div>
+
+        <div class="body">
+            
+            <div class="camera-container">
+                <video id="camera" autoplay playsinline style="display:none;"></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <img id="preview" alt="Captured preview"
+                    src="{% if student.photo %}{{ student.photo.url }}{% endif %}"
+                    style="{% if student.photo %}display:block;{% else %}display:none;{% endif %}">
+            </div>
+
+      
+
+            <div class="spacer" style="height: 16px;"></div>
+
+            <div class="column">
+                <div class="list-card">
+                    <div class="detail">
+                        <img src="{% if student.photo %} {% static 'img/check.png' %}{% else %}{% static 'img/warn.svg' %}{% endif %}" alt="">
+                        <h3>{{ student.name }} - {{ student.class_category }}</h3>
+                    </div>
+                </div>
+
+                <button class="sec-btn" id="captureBtn"><div class="btn-wrap"><img src="{% static 'img/camera.svg' %}" />Capture</div></button>
+                <div class="spacer-h"></div>
+                <button class="pry-btn" id="saveBtn" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const captureBtn = document.getElementById('captureBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    let compressedBlob = null;
+    let cameraStarted = false;
+
+    // Start camera feed
+    async function startCamera() {
+        if (cameraStarted) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            preview.style.display = 'none';
+            cameraStarted = true;
+        } catch (err) {
+            alert('Cannot access camera: ' + err.message);
+        }
+    }
+
+    // Capture image
+    captureBtn.addEventListener('click', () => {
+        if (video.style.display === 'none') {
+            startCamera();
+            return; // Wait for next click
+        }
+
+        const ctx = canvas.getContext('2d');
+
+        // Crop to square
+        const size = Math.min(video.videoWidth, video.videoHeight);
+        const sx = (video.videoWidth - size) / 2;
+        const sy = (video.videoHeight - size) / 2;
+
+        canvas.width = size;
+        canvas.height = size;
+
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+
+        canvas.toBlob((blob) => {
+            compressedBlob = blob;
+            preview.src = URL.createObjectURL(blob);
+            preview.style.display = 'block';
+            video.style.display = 'none';
+            saveBtn.disabled = false;
+            console.log("Compressed size:", (blob.size / 1024).toFixed(2), "KB");
+        }, 'image/jpeg', 0.6);
+    });
+
+    // Save & Upload to Django
+    saveBtn.addEventListener('click', async () => {
+        if (!compressedBlob) {
+            alert('Please capture a photo first!');
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Uploading...';
+
+        const formData = new FormData();
+        formData.append('photo', compressedBlob, 'photo.jpg');
+        formData.append('student_id', '{{ student.id }}');
+
+        try {
+            const response = await fetch("{% url 'facesnapper:upload_photo' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Redirect to success page with student info
+                window.location.href = data.redirect_url;
+            } else {
+                saveBtn.textContent = 'Try Again';
+                saveBtn.disabled = false;
+                alert(data.message);
+            }
+
+        } catch (err) {
+            saveBtn.textContent = 'Try Again';
+            saveBtn.disabled = false;
+            alert('Error uploading: ' + err.message);
+        }
+    });
+
+    // Auto-start camera if no photo
+    if (preview.style.display === 'none') {
+        startCamera();
+    }
+
+</script>
+
+</body>
+</html>

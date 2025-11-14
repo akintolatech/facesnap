@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success</title>
+    <link type="text/css" href="{% static 'styles/style.css' %}" rel="stylesheet" />
+    <link type="x-icon" href="{% static 'img/logo.jpg' %}" rel="icon" />
+    <script lang="javascript" src="{% static 'js/circularProgressBar.js' %}"></script>
+</head>
+<body>
+    <main class="auth-main">
+        <center>
+            <img src="{% static 'img/ribbon.png' %}" />
+            <h2>Captured!</h2>
+            <p><b>{{ student.name }}</b> in <b>{{ student.class_category }}</b> facial profile has been <br/> successfully captured</p>
+            <a href="{% url 'facesnapper:dashboard' %}"><button class="pry-btn">Go Home</button></a>
+        </center>
+    </main>
+</body>
+</html>

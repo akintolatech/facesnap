@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding</title>
+    <link type="text/css" href="{% static 'styles/style.css' %}" rel="stylesheet" />
+    <link type="x-icon" href="{% static 'img/logo.jpg' %}" rel="icon" />
+</head>
+<body>
+    <main class="auth-main">
+        <center>
+            <img src="{% static 'img/art.webp' %}" width="400px"/>
+            <h2>Face Snap</h2>
+            <p>Quickly Facial Profile a List of Students</p>
+            <a href="{% url 'facesnapper:dashboard' %}"><button class="pry-btn">Start Capturing</button></a>
+        </center>
+    </main>
+</body>
+</html>
