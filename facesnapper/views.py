@@ -106,8 +106,8 @@ def upload_students(request, class_id):
 
             # Loop through each row and create Student
             for _, row in df.iterrows():
-                adm_no = str(row.get('AdmissionNo', '')).strip()
-                name = str(row.get('FullName', '')).strip()
+                adm_no = str(row.get('ADMNO', '')).strip()
+                name = str(row.get('NAME', '')).strip()
 
                 if adm_no and name:
                     Student.objects.get_or_create(
